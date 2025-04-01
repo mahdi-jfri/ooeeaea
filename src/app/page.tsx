@@ -4,6 +4,7 @@ import {useEffect, useState} from "react";
 import * as Tone from "tone";
 import {emptyBuffer, stretchBuffer, concatBuffers} from "@/lib/tone";
 import AudioCanvas from "@/components/AudioCanvas";
+import {addBasePath} from "next/dist/client/add-base-path";
 
 export default function Home() {
     const [catAudioBuffer, setCatAudioBuffer] = useState<Tone.ToneAudioBuffer | undefined>(undefined);
@@ -11,7 +12,7 @@ export default function Home() {
 
     useEffect(() => {
         const loadSound = async (url: string) => {
-            return await Tone.ToneAudioBuffer.fromUrl(url);
+            return await Tone.ToneAudioBuffer.fromUrl(addBasePath(url));
         };
 
         const createCatAudioBuffer = async () => {
