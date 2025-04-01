@@ -71,7 +71,9 @@ export default function AudioCanvas({
     }
 
     return (
-        <canvas ref={setRef} width={width * ratio} height={height * ratio}
-                className="border-solid border-foreground"/>
+        <div className="overflow-x-auto border max-w-full" ref={canvasParRef}>
+            <canvas ref={setRef} width={width * ratio} height={height * ratio}
+                    className="border-solid border-foreground"/>
+        </div>
     )
 };
