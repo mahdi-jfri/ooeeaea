@@ -30,7 +30,7 @@ export default function AudioCanvas({
         const h = canvas.height;
 
         const data = audioBuffer.getChannelData(0);
-        const step = Math.floor(data.length / w);
+        const step = Math.ceil(data.length / w);
         const amp = h / 2;
 
         ctx.clearRect(0, 0, w, h);
