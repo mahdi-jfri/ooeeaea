@@ -8,6 +8,7 @@ interface AudioCanvasInput {
     bgColor?: string,
     lineColor?: string,
     ratio?: number,
+    scroll?: number,
 };
 
 export default function AudioCanvas({
@@ -16,12 +17,15 @@ export default function AudioCanvas({
                                         audioBuffer,
                                         bgColor = "#ffffff",
                                         lineColor = "#0055ae",
-                                        ratio = 4
+                                        ratio = 4,
+                                        scroll = 0,
                                     }: AudioCanvasInput) {
+    const canvasParRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const drawWaveform = useCallback(() => {
-        if (!canvasRef.current || !audioBuffer) return;
+        if (!canvasParRef.current || !canvasRef.current || !audioBuffer) return;
+        canvasParRef.current.scrollLeft = canvasParRef.current.scrollWidth * Math.max(0, scroll - 0.1);
 
         const canvas: HTMLCanvasElement = canvasRef.current;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -53,13 +57,16 @@ export default function AudioCanvas({
             ctx.lineTo(i, amp);
             ctx.moveTo(i, amp);
         }
+        const scrollPosition = w * scroll;
+        ctx.moveTo(scrollPosition, 0);
+        ctx.lineTo(scrollPosition, h);
         ctx.closePath();
         ctx.stroke();
-    }, [canvasRef, audioBuffer, bgColor, lineColor, ratio]);
+    }, [canvasRef, audioBuffer, bgColor, lineColor, ratio, scroll]);
 
     useEffect(() => {
         drawWaveform();
-    }, [audioBuffer, drawWaveform]);
+    }, [drawWaveform]);
 
     const setRef = (ref: HTMLCanvasElement | null) => {
         if (ref) {
