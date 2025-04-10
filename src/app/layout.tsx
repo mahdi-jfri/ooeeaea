@@ -20,6 +20,9 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "ooeeaea",
   description: "The spinning cat sound generator",
+  verification: {
+      google: "-8BQ0nBvZSuzkI2bQCRDL03cAFAJRQhW2SyGbMQjmwc",
+  },
 };
 
 export default function RootLayout({
