@@ -109,7 +109,7 @@ export default function AudioCanvas({
     }
 
     return (
-        <div className="overflow-x-auto border max-w-full" ref={setCanvasParRef}>
+        <div className="overflow-x-auto border rounded-lg max-w-full" ref={setCanvasParRef}>
             <canvas ref={setRef} width={canvasInnerWidth * ratio} height={canvasInnerHeight * ratio}
                     onClick={onClick}
                     className="border-solid border-foreground"/>
