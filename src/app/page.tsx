@@ -1,22 +1,26 @@
 "use client";
 
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import * as Tone from "tone";
 import {emptyBuffer, stretchBuffer, concatBuffers} from "@/lib/tone";
-import AudioCanvas from "@/components/AudioCanvas";
 import {addBasePath} from "next/dist/client/add-base-path";
+import {TextField} from "@mui/material";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function Home() {
     const [catAudioBuffer, setCatAudioBuffer] = useState<Tone.ToneAudioBuffer | undefined>(undefined);
     const [mineAudioBuffer, setMineAudioBuffer] = useState<Tone.ToneAudioBuffer | undefined>(undefined);
-    const [catProgress, setCatProgress] = useState<number | undefined>(undefined);
-    const [mineProgress, setMineProgress] = useState<number | undefined>(undefined);
+    const [textAudioBuffer, setTextAudioBuffer] = useState<Tone.ToneAudioBuffer | undefined>(undefined);
+
+    const [codeValue, setCodeValue] = useState<string>("");
+
+    const loadSound = async (url: string) => {
+        return await Tone.ToneAudioBuffer.fromUrl(addBasePath(url));
+    };
+
+    const textRef = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {
-        const loadSound = async (url: string) => {
-            return await Tone.ToneAudioBuffer.fromUrl(addBasePath(url));
-        };
-
         const createCatAudioBuffer = async () => {
             const [bufferCO, bufferCOSecond, bufferCEFirst, bufferCESecond, bufferCA] = await Promise.all(["/co.wav", "/co_second.wav", "/ce_first.wav", "/ce_second.wav", "/ca.wav"].map(loadSound));
             const buffers = [
@@ -73,46 +77,66 @@ export default function Home() {
         return;
     }, []);
 
-    const setProgress = (player: Tone.Player, duration: number, startTime: number, setProgressCallback: CallableFunction) => {
-        const _setProgress = () => {
-            const playbackTime = player.state === "started" ? player.now() - startTime : 0;
-            const progress = Math.min(1, playbackTime / duration);
-            setProgressCallback(progress);
-            if (player.state != "stopped")
-                requestAnimationFrame(_setProgress);
-        }
-        requestAnimationFrame(_setProgress);
-    };
+    useEffect(() => {
+        if (!textRef.current) return;
+        textRef.current.value = codeValue;
+    }, [codeValue]);
 
-    const playMineConsecutive = async () => {
-        if (!mineAudioBuffer) return;
+    const changeCodeValue = async (codeValue: string) => {
+        const [bufferCO, bufferCOSecond, bufferCEFirst, bufferCESecond, bufferCA] = await Promise.all(["/co.wav", "/co_second.wav", "/ce_first.wav", "/ce_second.wav", "/ca.wav"].map(loadSound));
+        const buffers = [...codeValue].map((ch) => {
+            if (ch === 'o') {
+                return bufferCO;
+            } else if (ch === 'O') {
+                return bufferCOSecond;
+            } else if (ch === 'e') {
+                return bufferCEFirst;
+            } else if (ch === 'E') {
+                return bufferCESecond;
+            } else if (ch === 'a') {
+                return bufferCA;
+            } else if (ch === ' ') {
+                return emptyBuffer(0.05);
+            }
+        }).filter(e => e !== undefined);
+        const buffer = await concatBuffers(buffers);
 
-        const player = new Tone.Player(mineAudioBuffer).toDestination();
-        const startTime = Tone.now();
-        player.start(startTime);
-        setProgress(player, mineAudioBuffer.duration, startTime, setMineProgress);
-    };
-
-    const playCatConsecutive = async () => {
-        if (!catAudioBuffer) return;
-
-        const player = new Tone.Player(catAudioBuffer).toDestination();
-        const startTime = Tone.now();
-        player.start(startTime);
-        setProgress(player, catAudioBuffer.duration, startTime, setCatProgress);
+        setTextAudioBuffer(buffer);
+        setCodeValue(codeValue);
     };
 
     return (
         <>
             <main
-                className="flex flex-col w-full mx-auto p-5 gap-y-8 items-start sm:items-center font-[family-name:var(--font-geist-sans)]">
+                className="flex flex-col mx-auto p-5 gap-y-8 items-start sm:items-center font-[family-name:var(--font-geist-sans)]">
                 <div className="max-w-full">
-                    <div onClick={playCatConsecutive} className="text-left">CAT</div>
-                    <AudioCanvas width={800} height={200} audioBuffer={catAudioBuffer} scroll={catProgress}></AudioCanvas>
+                    <div className="text-left">CAT</div>
+                    <AudioPlayer width={800} height={200} audioBuffer={catAudioBuffer}></AudioPlayer>
                 </div>
                 <div className="max-w-full">
-                    <div onClick={playMineConsecutive}>MINE</div>
-                    <AudioCanvas width={800} height={200} audioBuffer={mineAudioBuffer} scroll={mineProgress}></AudioCanvas>
+                    <div>MINE</div>
+                    <AudioPlayer width={800} height={200} audioBuffer={mineAudioBuffer}></AudioPlayer>
+                </div>
+                <div className="max-w-full">
+                    <TextField
+                        multiline
+                        slotProps={{htmlInput: {ref: textRef}}}
+                        minRows={3}
+                        maxRows={6}
+                        variant="outlined"
+                        placeholder={'Write here'}
+                        onChange={(e) => {
+                            e.preventDefault();
+                            setCodeValue(e.target.value);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                changeCodeValue(codeValue);
+                            }
+                        }}
+                        className="w-full border rounded-lg bg-foreground"
+                    />
+                    <AudioPlayer width={800} height={200} audioBuffer={textAudioBuffer}></AudioPlayer>
                 </div>
             </main>
         </>
