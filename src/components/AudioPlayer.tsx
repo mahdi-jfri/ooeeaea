@@ -8,11 +8,9 @@ interface AudioPlayerProps {
     width: number;
     height: number;
     audioBuffer?: Tone.ToneAudioBuffer,
-    bgColor?: string,
-    lineColor?: string,
 }
 
-export default function AudioPlayer({width, height, audioBuffer, bgColor, lineColor}: AudioPlayerProps) {
+export default function AudioPlayer({width, height, audioBuffer}: AudioPlayerProps) {
     const [playProgress, setPlayProgress] = useState<number>(0);
     const [playing, setPlaying] = useState<boolean>(false);
     const [player, setPlayer] = useState<Tone.Player | undefined>(undefined);
@@ -76,22 +74,20 @@ export default function AudioPlayer({width, height, audioBuffer, bgColor, lineCo
     };
 
     return (
-        <div>
+        <div className="flex flex-col">
             <AudioCanvas
                 width={width}
                 height={height}
                 audioBuffer={audioBuffer}
-                bgColor={bgColor}
-                lineColor={lineColor}
                 scroll={playProgress}
                 onMovePosition={(position) => setPosition(position * (audioBuffer?.duration || 0))}
             />
-            {audioBuffer && <Box className="flex items-center justify-between">
-                <span className="text-xs opacity-50">{formatDuration(playProgress * audioBuffer.duration)}</span>
-                <span className="text-xs opacity-50">{formatDuration(audioBuffer.duration * (1 - playProgress))}</span>
-            </Box>}
+            <Box className="flex items-center justify-between">
+                <span className="text-xs opacity-50">{formatDuration(playTimestamp)}</span>
+                <span className="text-xs opacity-50">{formatDuration((audioBuffer?.duration || 0) - playTimestamp)}</span>
+            </Box>
             <Box
-                className="flex items-center justify-center -mt-4"
+                className="flex items-center justify-center bg-primary rounded-lg"
             >
                 <IconButton>
                     <FastRewindRounded fontSize="large" className="text-foreground !text-4xl" onClick={fastRewind} />

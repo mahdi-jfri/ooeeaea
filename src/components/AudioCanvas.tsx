@@ -6,18 +6,15 @@ interface AudioCanvasInput {
     height: number,
     audioBuffer?: Tone.ToneAudioBuffer,
     bgColor?: string,
-    lineColor?: string,
     ratio?: number,
     scroll?: number,
     onMovePosition?: (position: number) => void,
-};
+}
 
 export default function AudioCanvas({
                                         width,
                                         height,
                                         audioBuffer,
-                                        bgColor = "#ffffff",
-                                        lineColor = "#0055ae",
                                         ratio = 4,
                                         scroll = 0,
                                         onMovePosition,
@@ -25,8 +22,7 @@ export default function AudioCanvas({
     const canvasParRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const canvasInnerWidth = Math.min(5000, Math.max(width, Math.floor(audioBuffer?.duration || 0) * 50));
-    console.log(canvasInnerWidth);
+    const canvasInnerWidth = Math.min(5000, Math.max(width, Math.floor(audioBuffer?.duration || 0) * 100));
     const canvasInnerHeight = height;
 
     const moveScroll = useCallback(() => {
@@ -35,7 +31,7 @@ export default function AudioCanvas({
     }, [canvasParRef, scroll])
 
     const drawWaveform = useCallback(() => {
-        if (!canvasRef.current || !audioBuffer) return;
+        if (!canvasRef.current) return;
 
         const canvas: HTMLCanvasElement = canvasRef.current;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -43,16 +39,16 @@ export default function AudioCanvas({
         const w = canvas.width;
         const h = canvas.height;
 
-        const data = audioBuffer.getChannelData(0);
+        const data = audioBuffer?.getChannelData(0) || [];
         const step = Math.ceil(data.length / w);
         const amp = h / 2;
 
         ctx.clearRect(0, 0, w, h);
-        ctx.fillStyle = bgColor;
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-foreground').trim();
         ctx.fillRect(0, 0, w, h);
 
         ctx.lineWidth = ratio;
-        ctx.strokeStyle = lineColor;
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
 
         ctx.beginPath();
         for (let i = 0; i < w; i++) {
@@ -72,7 +68,7 @@ export default function AudioCanvas({
         ctx.lineTo(scrollPosition, h);
         ctx.closePath();
         ctx.stroke();
-    }, [canvasRef, audioBuffer, bgColor, lineColor, ratio, scroll]);
+    }, [canvasRef, audioBuffer, ratio, scroll]);
 
     useEffect(() => {
         drawWaveform();
@@ -95,7 +91,6 @@ export default function AudioCanvas({
         const target = e.currentTarget;
         const rect = target.getBoundingClientRect();
         const position = (e.clientX - rect.left) / rect.width;
-        console.log(position);
         if (onMovePosition)
             onMovePosition(position);
     };
