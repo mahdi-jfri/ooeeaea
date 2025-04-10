@@ -49,16 +49,16 @@ export default function CodeAudioPlayer() {
     }, [codeValue]);
 
     useEffect(() => {
-        if(textRef.current) {
-            const startingValue = "oeeaeO EEEEaE"
+        if (textRef.current) {
+            const startingValue = "oeeaeO EEEEaE";
             setCodeValue(startingValue);
             textRef.current.value = startingValue;
             compile();
         }
-    }, [textRef, codeValue, compile]);
+    }, []);
 
     useEffect(() => {
-        const timeoutId = setTimeout(compile, 500);
+        const timeoutId = setTimeout(compile, 100);
         return () => clearTimeout(timeoutId);
     }, [codeValue, compile]);
 
@@ -79,7 +79,7 @@ export default function CodeAudioPlayer() {
                     onChange={(e) => {
                         e.preventDefault();
                         const value = keepAllowed(e.target.value);
-                        if(textRef.current) textRef.current.value = value;
+                        if (textRef.current) textRef.current.value = value;
                         setCodeValue(value);
                     }}
                     helperText="Use o, e, a, O, E, and space."
@@ -90,7 +90,11 @@ export default function CodeAudioPlayer() {
                         }
                     }}
                     sx={{
+                        "& .MuiFormHelperText-root": {
+                            color: "var(--background)",
+                        },
                         "& .MuiOutlinedInput-root": {
+                            color: "var(--background)",
                             "& fieldset": {
                                 border: "none",
                             },
