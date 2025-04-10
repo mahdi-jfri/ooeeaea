@@ -1,6 +1,6 @@
-import {TextField} from "@mui/material";
+import {Box, TextField} from "@mui/material";
 import AudioPlayer from "@/components/AudioPlayer";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import * as Tone from "tone";
 import {addBasePath} from "next/dist/client/add-base-path";
 import {concatBuffers, emptyBuffer} from "@/lib/tone";
@@ -10,19 +10,24 @@ export default function CodeAudioPlayer() {
 
     const [codeValue, setCodeValue] = useState<string>("");
 
-    const loadSound = async (url: string) => {
-        return await Tone.ToneAudioBuffer.fromUrl(addBasePath(url));
-    };
-
     const textRef = useRef<HTMLInputElement | null>(null);
 
-    useEffect(() => {
-        if (!textRef.current) return;
-        textRef.current.value = codeValue;
-    }, [codeValue]);
+    const keepAllowed = (code: string): string => {
+        return [...code].filter((ch) => ['o', 'O', 'e', 'E', 'a', ' ', '\n'].includes(ch)).join('');
+    };
 
-    const changeCodeValue = async (codeValue: string) => {
-        const [bufferCO, bufferCOSecond, bufferCEFirst, bufferCESecond, bufferCA] = await Promise.all(["/co.wav", "/co_second.wav", "/ce_first.wav", "/ce_second.wav", "/ca.wav"].map(loadSound));
+    const compile = useCallback(async () => {
+        if (!codeValue) {
+            setTextAudioBuffer(undefined);
+            return;
+        }
+        const [bufferCO, bufferCOSecond, bufferCEFirst, bufferCESecond, bufferCA] = await Promise.all([
+            "/co.wav",
+            "/co_second.wav",
+            "/ce_first.wav",
+            "/ce_second.wav",
+            "/ca.wav",
+        ].map(async (url) => await Tone.ToneAudioBuffer.fromUrl(addBasePath(url))));
         const buffers = [...codeValue].map((ch) => {
             if (ch === 'o') {
                 return bufferCO;
@@ -34,37 +39,72 @@ export default function CodeAudioPlayer() {
                 return bufferCESecond;
             } else if (ch === 'a') {
                 return bufferCA;
-            } else if (ch === ' ') {
-                return emptyBuffer(0.05);
+            } else if (ch === ' ' || ch == '\n') {
+                return emptyBuffer(0.1);
             }
         }).filter(e => e !== undefined);
         const buffer = await concatBuffers(buffers);
 
         setTextAudioBuffer(buffer);
-        setCodeValue(codeValue);
-    };
+    }, [codeValue]);
+
+    useEffect(() => {
+        if(textRef.current) {
+            const startingValue = "oeeaeO EEEEaE"
+            setCodeValue(startingValue);
+            textRef.current.value = startingValue;
+            compile();
+        }
+    }, [textRef, codeValue, compile]);
+
+    useEffect(() => {
+        const timeoutId = setTimeout(compile, 500);
+        return () => clearTimeout(timeoutId);
+    }, [codeValue, compile]);
 
     return (
         <>
-            <TextField
-                multiline
-                slotProps={{htmlInput: {ref: textRef}}}
-                minRows={3}
-                maxRows={6}
-                variant="outlined"
-                placeholder={'Write here'}
-                onChange={(e) => {
-                    e.preventDefault();
-                    setCodeValue(e.target.value);
-                }}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") {
+            <Box className="flex flex-row flex-wrap justify-between gap-x-2 gap-y-2 mb-4">
+                <TextField
+                    multiline
+                    slotProps={{
+                        htmlInput: {
+                            ref: textRef,
+                        }
+                    }}
+                    minRows={3}
+                    maxRows={6}
+                    variant="outlined"
+                    placeholder={'Write here'}
+                    onChange={(e) => {
                         e.preventDefault();
-                        changeCodeValue(codeValue);
-                    }
-                }}
-                className="w-full border rounded-lg bg-foreground !mb-2"
-            />
+                        const value = keepAllowed(e.target.value);
+                        if(textRef.current) textRef.current.value = value;
+                        setCodeValue(value);
+                    }}
+                    helperText="Use o, e, a, O, E, and space."
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            compile();
+                        }
+                    }}
+                    sx={{
+                        "& .MuiOutlinedInput-root": {
+                            "& fieldset": {
+                                border: "none",
+                            },
+                            "&.Mui-focused fieldset": {
+                                border: "none",
+                            },
+                            "&:hover fieldset": {
+                                border: "none",
+                            },
+                        },
+                    }}
+                    className="w-full rounded-lg bg-foreground"
+                />
+            </Box>
             <AudioPlayer width={800} height={200} audioBuffer={textAudioBuffer}></AudioPlayer>
         </>
     );
