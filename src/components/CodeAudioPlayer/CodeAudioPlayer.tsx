@@ -4,6 +4,8 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import * as Tone from "tone";
 import {addBasePath} from "next/dist/client/add-base-path";
 import {concatBuffers, emptyBuffer} from "@/lib/tone";
+import {compileCode} from "@/lib/compiler/compiler";
+
 
 export default function CodeAudioPlayer() {
     const [textAudioBuffer, setTextAudioBuffer] = useState<Tone.ToneAudioBuffer | undefined>(undefined);
@@ -12,15 +14,37 @@ export default function CodeAudioPlayer() {
 
     const textRef = useRef<HTMLInputElement | null>(null);
 
+    const [errorValue, setErrorValue] = useState<string>("");
+
     const keepAllowed = (code: string): string => {
-        return [...code].filter((ch) => ['o', 'O', 'e', 'E', 'a', ' ', '\n'].includes(ch)).join('');
+        return code;
     };
 
-    const compile = useCallback(async () => {
+    const codeLimit = 500;
+
+    const compile = useCallback(async (codeValue: string) => {
         if (!codeValue) {
             setTextAudioBuffer(undefined);
             return;
         }
+        let evaluatedCode: string;
+        try {
+            const {finalResult, compilationErrors} = compileCode(codeValue);
+            if (compilationErrors.length > 0) {
+                setErrorValue(compilationErrors.map(error => `Line ${error.lineNumber}: ${error.message}`).join("\n"));
+                return;
+            }
+            evaluatedCode = finalResult;
+            if (evaluatedCode.length > codeLimit) {
+                setErrorValue(`EvaluatedCode must be at most ${codeLimit} characters long.`);
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+            setErrorValue("Something went wrong");
+            return;
+        }
+        setErrorValue("");
         const [bufferCO, bufferCOSecond, bufferCEFirst, bufferCESecond, bufferCA] = await Promise.all([
             "/co.wav",
             "/co_second.wav",
@@ -28,7 +52,7 @@ export default function CodeAudioPlayer() {
             "/ce_second.wav",
             "/ca.wav",
         ].map(async (url) => await Tone.ToneAudioBuffer.fromUrl(addBasePath(url))));
-        const buffers = [...codeValue].map((ch) => {
+        const buffers = [...evaluatedCode].map((ch) => {
             if (ch === 'o') {
                 return bufferCO;
             } else if (ch === 'O') {
@@ -46,19 +70,19 @@ export default function CodeAudioPlayer() {
         const buffer = await concatBuffers(buffers);
 
         setTextAudioBuffer(buffer);
-    }, [codeValue]);
-
-    useEffect(() => {
-        if (textRef.current) {
-            const startingValue = "oeeaeO EEEEaE";
-            setCodeValue(startingValue);
-            textRef.current.value = startingValue;
-            compile();
-        }
     }, []);
 
     useEffect(() => {
-        const timeoutId = setTimeout(compile, 100);
+        if (textRef.current) {
+            const startingValue = 'repeat = 20;\ntone = "oeeaeO EEEEaE";\n(repeat + 1) * tone;';
+            setCodeValue(startingValue);
+            textRef.current.value = startingValue;
+            compile(startingValue);
+        }
+    }, [compile]);
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => compile(codeValue), 100);
         return () => clearTimeout(timeoutId);
     }, [codeValue, compile]);
 
@@ -70,6 +94,9 @@ export default function CodeAudioPlayer() {
                     slotProps={{
                         htmlInput: {
                             ref: textRef,
+                        },
+                        formHelperText: {
+                            className: "block !text-red-700 line-clamp-3 max-w-[700px] !whitespace-pre-line"
                         }
                     }}
                     minRows={3}
@@ -82,11 +109,17 @@ export default function CodeAudioPlayer() {
                         if (textRef.current) textRef.current.value = value;
                         setCodeValue(value);
                     }}
-                    helperText="Use o, e, a, O, E, and space."
+                    helperText={(() => {
+                        if (errorValue) {
+                            return errorValue;
+                        } else {
+                            return "";
+                        }
+                    })()}
                     onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            compile();
+                            compile(codeValue);
                         }
                     }}
                     sx={{
