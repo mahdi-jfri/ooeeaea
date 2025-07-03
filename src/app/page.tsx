@@ -19,7 +19,15 @@ export default function Home() {
                     <MineAudioPlayer />
                 </div>
                 <div className="max-w-full">
-                    <div>FROM CODE</div>
+                    <div className="flex flex-row gap-x-2">
+                        <span>FROM CODE</span>
+                        <a
+                            href="https://github.com/mahdi-jfri/ooeeaea?tab=readme-ov-file#how-to-write-ooeeaea-code-%EF%B8%8F"
+                            className="text-blue-500 hover:text-blue-300"
+                        >
+                            TUTORIAL📚
+                        </a>
+                    </div>
                     <CodeAudioPlayer />
                 </div>
             </main>
