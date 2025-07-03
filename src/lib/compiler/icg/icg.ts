@@ -120,8 +120,8 @@ export class ICG {
     }
 
     private actionAdd = (_input: string) => {
-        const op1 = this.semanticStack.pop();
         const op2 = this.semanticStack.pop();
+        const op1 = this.semanticStack.pop();
         if (op1 instanceof NumberValue && op2 instanceof NumberValue) {
             this.semanticStack.push(new NumberValue(op1.value + op2.value));
         } else if (op1 instanceof StringValue && op2 instanceof StringValue) {
