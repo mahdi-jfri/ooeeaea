@@ -26,7 +26,7 @@ export class InvalidStringNode extends DFANode {
 }
 
 export function staticStringDFA(): Edge[] {
-    const allowed = ["a", "e", "o", "A", "E", "O", " "];
+    const allowed = ["a", "e", "o", "E", "O", " "];
 
     const inString = new DFANode("static_in");
     const finalNode = new StaticStringNode();
