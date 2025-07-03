@@ -1,4 +1,4 @@
-# ooeeaea
+# ooeeaea <img src="https://raw.githubusercontent.com/mahdi-jfri/ooeeaea/refs/heads/main/src/app/favicon.ico" alt="ooeeaea Cat" width="20"/>
 
 This project is a web-based application built with Next.js and TypeScript that allows users to generate "ooeeaea" sounds from a custom programming language, enabling the creation of more complex and automated sound patterns.
 
