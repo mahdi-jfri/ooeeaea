@@ -74,7 +74,7 @@ export default function CodeAudioPlayer() {
 
     useEffect(() => {
         if (textRef.current) {
-            const startingValue = 'repeat = 20;\ntone = "oeeaeO EEEEaE";\n(repeat + 1) * tone;';
+            const startingValue = 'repeat = 2;\ntone = "oeeaeO EEEEaE";\n(repeat + 1) * tone;';
             setCodeValue(startingValue);
             textRef.current.value = startingValue;
             compile(startingValue);
