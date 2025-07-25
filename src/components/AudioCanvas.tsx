@@ -15,7 +15,7 @@ export default function AudioCanvas({
                                         width,
                                         height,
                                         audioBuffer,
-                                        ratio = 4,
+                                        ratio = 2,
                                         scroll = 0,
                                         onMovePosition,
                                     }: AudioCanvasInput) {
@@ -25,13 +25,13 @@ export default function AudioCanvas({
     const canvasInnerWidth = Math.min(5000, Math.max(width, Math.floor(audioBuffer?.duration || 0) * 100));
     const canvasInnerHeight = height;
 
-    const moveScroll = useCallback(() => {
+    useEffect(() => {
         if (!canvasParRef.current) return;
         canvasParRef.current.scrollLeft = canvasParRef.current.scrollWidth * Math.max(0, scroll - 0.1);
     }, [canvasParRef, scroll])
 
     const drawWaveform = useCallback(() => {
-        if (!canvasRef.current) return;
+        if (!canvasRef.current || !audioBuffer) return;
 
         const canvas: HTMLCanvasElement = canvasRef.current;
         const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -39,7 +39,7 @@ export default function AudioCanvas({
         const w = canvas.width;
         const h = canvas.height;
 
-        const data = audioBuffer?.getChannelData(0) || [];
+        const data = audioBuffer.getChannelData(0) || [];
         const step = Math.ceil(data.length / w);
         const amp = h / 2;
 
@@ -70,19 +70,9 @@ export default function AudioCanvas({
         ctx.stroke();
     }, [canvasRef, audioBuffer, ratio, scroll]);
 
-    useEffect(() => {
-        drawWaveform();
-    }, [drawWaveform]);
-
-    useEffect(() => {
-        moveScroll();
-    }, [moveScroll]);
-
     const setRef = (ref: HTMLCanvasElement | null) => {
         if (ref) {
             canvasRef.current = ref;
-            ref.style.width = canvasInnerWidth + "px";
-            ref.style.height = canvasInnerHeight + "px";
             drawWaveform();
         }
     }
@@ -107,6 +97,7 @@ export default function AudioCanvas({
         <div className="overflow-x-auto border rounded-lg max-w-full" ref={setCanvasParRef}>
             <canvas ref={setRef} width={canvasInnerWidth * ratio} height={canvasInnerHeight * ratio}
                     onClick={onClick}
+                    style={{width: `${canvasInnerWidth}px`, height: `${canvasInnerHeight}px`}}
                     className="border-solid border-foreground"/>
         </div>
     )
