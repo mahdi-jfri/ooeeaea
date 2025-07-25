@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import * as Tone from "tone";
 
 interface AudioCanvasInput {
@@ -22,9 +22,12 @@ function AudioCanvas({
     const canvasParRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [cachedCanvas, setCachedCanvas] = useState<HTMLCanvasElement | null>(null);
+    const [end, setEnd] = useState<number>(0);
 
-    const canvasInnerWidth = Math.min(5000, Math.max(width, Math.floor(audioBuffer?.duration || 0) * 100));
-    const canvasInnerHeight = height;
+    const canvasInnerWidth = useMemo(() =>
+            Math.min(5000, Math.max(width, Math.floor(audioBuffer?.duration || 0) * 100))
+        , [audioBuffer, width]);
+    const canvasInnerHeight = useMemo(() => height, [height]);
 
     useEffect(() => {
         const canvas = document.createElement("canvas");
@@ -39,12 +42,13 @@ function AudioCanvas({
         const step = Math.ceil(Math.ceil(data.length / downsampleSize) / w);
         const amp = h / 2;
 
-        ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-foreground').trim();
         ctx.fillRect(0, 0, w, h);
 
         ctx.lineWidth = ratio;
         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+
+        setEnd(Math.floor(data.length / step / downsampleSize) / w);
 
         ctx.beginPath();
         for (let i = 0; i < w; i++) {
@@ -66,7 +70,7 @@ function AudioCanvas({
                 }
             }
 
-            ctx.moveTo(i, amp + min * amp);
+            ctx.lineTo(i, amp + min * amp);
             ctx.lineTo(i, amp + max * amp);
         }
         ctx.moveTo(0, amp);
@@ -77,8 +81,8 @@ function AudioCanvas({
 
     useEffect(() => {
         if (!canvasParRef.current) return;
-        canvasParRef.current.scrollLeft = canvasParRef.current.scrollWidth * Math.max(0, scroll - 0.1);
-    }, [canvasParRef, scroll])
+        canvasParRef.current.scrollLeft = canvasParRef.current.scrollWidth * end * Math.max(0, scroll - 0.1);
+    }, [canvasParRef, scroll, end])
 
     const drawWaveform = useCallback(() => {
         if (!canvasRef.current || !cachedCanvas) return;
@@ -90,7 +94,7 @@ function AudioCanvas({
         const w = canvas.width;
         const h = canvas.height;
 
-        const scrollPosition = w * scroll;
+        const scrollPosition = w * scroll * end;
         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
         ctx.lineWidth = ratio;
         ctx.beginPath();
@@ -98,7 +102,7 @@ function AudioCanvas({
         ctx.lineTo(scrollPosition, h);
         ctx.closePath();
         ctx.stroke();
-    }, [cachedCanvas, ratio, scroll]);
+    }, [cachedCanvas, ratio, scroll, end]);
 
     const setRef = (ref: HTMLCanvasElement | null) => {
         if (ref) {
@@ -110,7 +114,7 @@ function AudioCanvas({
     const onClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const target = e.currentTarget;
         const rect = target.getBoundingClientRect();
-        const position = (e.clientX - rect.left) / rect.width;
+        const position = (e.clientX - rect.left) / (rect.width * end);
         if (onMovePosition)
             onMovePosition(position);
     };
