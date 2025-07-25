@@ -92,7 +92,7 @@ export default function CodeAudioPlayer() {
                     slotProps={{
                         htmlInput: {
                             ref: textRef,
-                            value: startingCodeValue,
+                            value: codeValue,
                         },
                         formHelperText: {
                             className: "block !text-red-700 line-clamp-3 max-w-[700px] !whitespace-pre-line"
@@ -105,7 +105,6 @@ export default function CodeAudioPlayer() {
                     onChange={(e) => {
                         e.preventDefault();
                         const value = keepAllowed(e.target.value);
-                        if (textRef.current) textRef.current.value = value;
                         setCodeValue(value);
                     }}
                     helperText={(() => {
