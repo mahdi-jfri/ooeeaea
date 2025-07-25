@@ -10,7 +10,8 @@ import {compileCode} from "@/lib/compiler/compiler";
 export default function CodeAudioPlayer() {
     const [textAudioBuffer, setTextAudioBuffer] = useState<Tone.ToneAudioBuffer | undefined>(undefined);
 
-    const [codeValue, setCodeValue] = useState<string>("");
+    const startingCodeValue = 'repeat = 2;\ntone = "oeeaeO EEEEaE";\n(repeat + 1) * tone;';
+    const [codeValue, setCodeValue] = useState<string>(startingCodeValue);
 
     const textRef = useRef<HTMLInputElement | null>(null);
 
@@ -74,10 +75,7 @@ export default function CodeAudioPlayer() {
 
     useEffect(() => {
         if (textRef.current) {
-            const startingValue = 'repeat = 2;\ntone = "oeeaeO EEEEaE";\n(repeat + 1) * tone;';
-            setCodeValue(startingValue);
-            textRef.current.value = startingValue;
-            compile(startingValue);
+            compile(startingCodeValue);
         }
     }, [compile]);
 
@@ -94,6 +92,7 @@ export default function CodeAudioPlayer() {
                     slotProps={{
                         htmlInput: {
                             ref: textRef,
+                            value: startingCodeValue,
                         },
                         formHelperText: {
                             className: "block !text-red-700 line-clamp-3 max-w-[700px] !whitespace-pre-line"
@@ -116,12 +115,6 @@ export default function CodeAudioPlayer() {
                             return "";
                         }
                     })()}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            compile(codeValue);
-                        }
-                    }}
                     sx={{
                         "& .MuiFormHelperText-root": {
                             color: "var(--background)",
